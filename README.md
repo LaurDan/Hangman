@@ -1,2 +1,2 @@
-Hangman
-Tic Tac Toe
+1.Hangman
+2.Tic Tac Toe
