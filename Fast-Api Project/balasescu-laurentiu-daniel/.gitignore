@@ -1,0 +1,18 @@
+# Gitignore: tests/coverage reports
+rm -rf .coverage
+.mypy_cache
+.pytest_cache
+updateservice/api_tests/.pytest_cache
+updateservice/tests/.pytest_cache
+./**/__pychache__
+dist
+htmlcov
+coverage.xml
+.DS_Store
+.env
+.env_api_test_fail
+.idea/
+.vscode/
+./migrations/__pycache__/
+./migrations/versions/__pycache__/
+updateservice/__pycache__/

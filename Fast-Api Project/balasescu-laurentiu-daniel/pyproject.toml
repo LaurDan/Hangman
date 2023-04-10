@@ -1,0 +1,155 @@
+[tool.poetry]
+name = "updateservice"
+version = "0.1.0"
+description = "Simple Python REST service to manage packages updates"
+authors = ["Yuriy Senko <ysenko@lohika.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.75.2"
+uvicorn = {extras = ["standard"], version = "^0.17.6"}
+pydantic = "^1.9.0"
+poethepoet = "^0.13.1"
+SQLAlchemy = "1.4.42"
+greenlet = "^1.1.3.post0"
+asyncpg = "^0.26.0"
+httpx = "^0.23.0"
+alembic = "^1.8.1"
+python-jose = "^3.3.0"
+passlib = "^1.7.4"
+cryptography = "^38.0.4"
+PyJWT = "^2.6.0"
+python-dotenv = "^0.21.1"
+semantic-version = "^2.10.0"
+python-multipart = "^0.0.5"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.2.0"
+ipdb = "^0.13.9"
+mypy = "^0.942"
+pylint = "^2.13.7"
+pytest = "^7.1.2"
+isort = "^5.10.1"
+black = "^22.3.0"
+pytest-cov = "^4.0.0"
+pytest-asyncio = "^0.19.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.coverage.run]
+omit = ["updateservice/api_tests/*"]
+
+[tool.poe.tasks]
+
+[tool.poe.tasks.clean]
+cmd  = """
+rm -rf .coverage
+.mypy_cache
+.pytest_cache
+updateservice/api_tests/.pytest_cache
+updateservice/tests/.pytest_cache
+./**/__pycache__
+dist
+htmlcov
+coverage.xml
+./tests/fixtures/simple_project/venv
+./tests/fixtures/venv_project/myvenv
+./tests/temp
+"""
+help = "Clean the reports"
+
+[tool.poe.tasks.pytest]
+cmd = "pytest updateservice/tests --cov=updateservice --cov-report=${cov_report_type}"
+help = "Default test run with no args"
+
+[[tool.poe.tasks.pytest.args]]
+name = "cov_report_type"
+options = ["--cov-report-type"]
+default = "xml"
+help = "Select xml or html to run a specific test"
+
+[tool.poe.tasks.test]
+sequence = ["clean", "pytest --cov-report-type=${cov_report_type}"]
+
+[[tool.poe.tasks.test.args]]
+name = "cov_report_type"
+options = ["--cov-report-type"]
+default = "xml"
+help = "Delete previous reports and generate a new one"
+
+[tool.poe.tasks.build_image]
+  cmd = "docker build -t updateservice:${build_image} ."
+  help = "Build and tag as latest poe build_image"
+
+ [[tool.poe.tasks.build_image.args]]
+    name = "build_image"
+    options = ["--tag"]
+    help = "Choose the image tag"
+    default = "latest"
+
+[tool.poe.tasks.docker_compose_up]
+  cmd = "docker compose up -d"
+  help = "Starts the app locally inside the container"
+
+[tool.poe.tasks.docker_compose_down]
+  cmd = "docker compose down"
+  help = "Stops the app running inside the container"
+
+[tool.poe.tasks.clean_test_api_serv]
+  help = "Cleaning and testing"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_DEPLOY_TESTING_CONNECTION_STRING}"}
+  sequence = ["clean", "api_tests"]
+
+[tool.poe.tasks.api_tests_serv]
+  cmd = "pytest updateservice/api_tests"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_DEPLOY_TESTING_CONNECTION_STRING}"}
+  help = "Run api tests on server"
+
+[tool.poe.tasks.unittests_serv]
+  cmd = "pytest updateservice/tests"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_DEPLOY_TESTING_CONNECTION_STRING}"}
+  help = "Run unnitests on server"
+
+[tool.poe.tasks.clean_test_api_local]
+  help = "Cleaning and testing"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_LOCAL_TESTING_CONNECTION_STRING}"}
+  sequence = ["clean", "api_tests"]
+
+[tool.poe.tasks.api_tests_local]
+  cmd = "pytest updateservice/api_tests"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_LOCAL_TESTING_CONNECTION_STRING}"}
+  help = "Run api tests locally"
+
+[tool.poe.tasks.unittests_local]
+  cmd = "pytest updateservice/tests"
+  envfile = ".env.testing"
+  env = {UPDATE_SRV_DB_CONNECTION_STRING = "${UPDATE_SRV_DB_LOCAL_TESTING_CONNECTION_STRING}"}
+  help = "Run unnitests locally"
+
+[tool.poe.tasks.alembic_upgrade_dev]
+  cmd = "alembic -x db=dev upgrade heads"
+  help = "Alembic upgrade heads dev"
+
+[tool.poe.tasks.alembic_upgrade_tests]
+  cmd = "alembic -x db=tests upgrade heads"
+  help = "Alembic upgrade heads tests"
+
+[tool.poe.tasks.alembic_downgrade_dev]
+  cmd = "alembic -x db=dev downgrade base"
+  help = "Alembic downgrade base dev"
+
+[tool.poe.tasks.alembic_downgrade_tests]
+  cmd = "alembic -x db=tests downgrade base"
+  help = "Alembic downgrade base tests"
+
+[tool.poe.tasks.alembic_upgrade_tests_ci]
+  cmd = "alembic -x db=ci_cd upgrade heads"
+  help = "Alembic upgrade heads tests ci/cd"
